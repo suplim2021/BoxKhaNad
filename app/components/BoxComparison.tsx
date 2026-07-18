@@ -5,7 +5,7 @@ import { useState, type CSSProperties, type ReactNode } from "react";
 import {
   fitIsometricScale,
   getCylinderAxis,
-  getCylinderMeasurements,
+  projectIsometricCylinder,
   projectIsometric,
 } from "../lib/isometric";
 import styles from "./BoxComparison.module.css";
@@ -94,9 +94,8 @@ function getItemStyle(
   const packedWidth = packedProjection.lengthX + packedProjection.depthX;
   const packedHeight = packedProjection.lengthY + packedProjection.depthY + packedProjection.vertical;
   const cylinderAxis = getCylinderAxis(item.dimensions);
-  const itemCylinder = getCylinderMeasurements(item.dimensions, cylinderAxis);
-  const packedCylinder = getCylinderMeasurements(packed, cylinderAxis);
-  const cylinderDiameterFactor = cylinderAxis === "height" ? 1.225 : 1.12;
+  const itemCylinder = projectIsometricCylinder(item.dimensions, projectionScale, cylinderAxis);
+  const packedCylinder = projectIsometricCylinder(packed, projectionScale, cylinderAxis);
   const itemWidthLimit = (boxProjection.lengthX + boxProjection.depthX) * 0.84;
   const itemHeightLimit = (
     boxProjection.lengthY + boxProjection.depthY + boxProjection.vertical
@@ -111,10 +110,12 @@ function getItemStyle(
     "--item-h": `${overflow ? itemHeight : clamp(itemHeight, 20, itemHeightLimit)}px`,
     "--packed-w": `${overflow ? packedWidth : clamp(packedWidth, 30, packedWidthLimit)}px`,
     "--packed-h": `${overflow ? packedHeight : clamp(packedHeight, 26, packedHeightLimit)}px`,
-    "--item-cylinder-axis": `${Math.max(22, itemCylinder.axis * projectionScale)}px`,
-    "--item-cylinder-diameter": `${Math.max(16, itemCylinder.diameter * projectionScale * cylinderDiameterFactor)}px`,
-    "--packed-cylinder-axis": `${Math.max(28, packedCylinder.axis * projectionScale)}px`,
-    "--packed-cylinder-diameter": `${Math.max(21, packedCylinder.diameter * projectionScale * cylinderDiameterFactor)}px`,
+    "--item-cylinder-axis": `${itemCylinder.axisLength}px`,
+    "--item-cylinder-major": `${itemCylinder.faceMajor}px`,
+    "--item-cylinder-cap": `${itemCylinder.faceMinor}px`,
+    "--packed-cylinder-axis": `${packedCylinder.axisLength}px`,
+    "--packed-cylinder-major": `${packedCylinder.faceMajor}px`,
+    "--packed-cylinder-cap": `${packedCylinder.faceMinor}px`,
     "--item-iso-lx": `${itemProjection.lengthX}px`,
     "--item-iso-ly": `${itemProjection.lengthY}px`,
     "--item-iso-dx": `${itemProjection.depthX}px`,
@@ -145,6 +146,28 @@ function ParcelCuboid({ protectedLayer = false }: { protectedLayer?: boolean }) 
   );
 }
 
+function CylinderVisual({
+  protectedLayer = false,
+  orientationClass,
+}: {
+  protectedLayer?: boolean;
+  orientationClass: string;
+}) {
+  return (
+    <span
+      className={[
+        styles.isometricCylinder,
+        protectedLayer ? styles.cylinderProtection : styles.cylinderItem,
+        orientationClass,
+      ].join(" ")}
+    >
+      <span className={styles.cylinderBody} />
+      <span className={`${styles.cylinderCap} ${styles.cylinderBackCap}`} />
+      <span className={`${styles.cylinderCap} ${styles.cylinderFrontCap}`} />
+    </span>
+  );
+}
+
 function ItemInside({ item, shapeType, box, projectionScale, overflow }: {
   item: PackedItemVisual;
   shapeType: BoxShape;
@@ -171,6 +194,28 @@ function ItemInside({ item, shapeType, box, projectionScale, overflow }: {
     );
   }
 
+  if (shapeType === "cylinder") {
+    return (
+      <span
+        className={styles.contents}
+        style={getItemStyle(item, box, projectionScale, overflow)}
+        aria-hidden="true"
+      >
+        <span
+          className={[
+            styles.cylinderAnchor,
+            hasProtection ? styles.cylinderPackedAnchor : styles.cylinderItemAnchor,
+          ].join(" ")}
+        >
+          {hasProtection ? (
+            <CylinderVisual protectedLayer orientationClass={cylinderOrientation} />
+          ) : null}
+          <CylinderVisual orientationClass={cylinderOrientation} />
+        </span>
+      </span>
+    );
+  }
+
   return (
     <span
       className={styles.contents}
@@ -178,16 +223,10 @@ function ItemInside({ item, shapeType, box, projectionScale, overflow }: {
       aria-hidden="true"
     >
       {hasProtection ? (
-        <span
-          className={[
-            styles.protection,
-            shapeType === "cylinder" ? styles.shape_cylinder : "",
-            cylinderOrientation,
-          ].filter(Boolean).join(" ")}
-        />
+        <span className={styles.protection} />
       ) : null}
       <span
-        className={[styles.item, styles[`shape_${shapeType}`], cylinderOrientation]
+        className={[styles.item, styles[`shape_${shapeType}`]]
           .filter(Boolean)
           .join(" ")}
       />

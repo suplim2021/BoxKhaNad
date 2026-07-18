@@ -2,6 +2,8 @@ import type { Size } from "./box-fit";
 
 export const ISO_COS_30 = Math.sqrt(3) / 2;
 export const ISO_SIN_30 = 0.5;
+export const ISO_CIRCLE_MAJOR = Math.sqrt(3 / 2);
+export const ISO_CIRCLE_MINOR = 1 / Math.sqrt(2);
 
 export type CylinderAxis = "length" | "width" | "height";
 
@@ -73,4 +75,35 @@ export function getCylinderMeasurements(size: Size, axis: CylinderAxis) {
     return { axis: size.width, diameter: (size.length + size.height) / 2 };
   }
   return { axis: size.height, diameter: (size.length + size.width) / 2 };
+}
+
+export function projectIsometricCircle(diameter: number, pixelsPerCentimetre: number) {
+  const safeDiameter = finitePositive(diameter);
+  const scale = finitePositive(pixelsPerCentimetre);
+
+  return {
+    major: safeDiameter * scale * ISO_CIRCLE_MAJOR,
+    minor: safeDiameter * scale * ISO_CIRCLE_MINOR,
+  };
+}
+
+export function projectIsometricCylinder(
+  size: Size,
+  pixelsPerCentimetre: number,
+  axis = getCylinderAxis(size),
+) {
+  const scale = finitePositive(pixelsPerCentimetre);
+  const cylinder = getCylinderMeasurements(size, axis);
+  const face = projectIsometricCircle(cylinder.diameter, scale);
+  const envelope = projectIsometric(size, scale);
+
+  return {
+    axis,
+    axisLength: cylinder.axis * scale,
+    faceMajor: face.major,
+    faceMinor: face.minor,
+    floorHalf: (envelope.lengthY + envelope.depthY) / 2,
+    envelopeWidth: envelope.lengthX + envelope.depthX,
+    envelopeHeight: envelope.lengthY + envelope.depthY + envelope.vertical,
+  };
 }

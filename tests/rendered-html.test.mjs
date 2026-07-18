@@ -53,12 +53,13 @@ test("server-renders the BoxKhaNad calculator", async () => {
 });
 
 test("removes the disposable starter and metadata", async () => {
-  const [page, layout, packageJson, css, comparisonCss] = await Promise.all([
+  const [page, layout, packageJson, css, comparisonCss, comparisonComponent] = await Promise.all([
     readFile(new URL("../app/page.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/layout.tsx", import.meta.url), "utf8"),
     readFile(new URL("../package.json", import.meta.url), "utf8"),
     readFile(new URL("../app/globals.css", import.meta.url), "utf8"),
     readFile(new URL("../app/components/BoxComparison.module.css", import.meta.url), "utf8"),
+    readFile(new URL("../app/components/BoxComparison.tsx", import.meta.url), "utf8"),
   ]);
 
   assert.match(page, /BoxCalculator/);
@@ -68,7 +69,17 @@ test("removes the disposable starter and metadata", async () => {
   assert.match(comparisonCss, /cubic-bezier\(0\.22, 1, 0\.36, 1\)/);
   assert.match(comparisonCss, /bottom: calc\(44px - var\(--iso-floor-half\)\)/);
   assert.match(comparisonCss, /\.projectedParcel/);
+  assert.match(comparisonCss, /\.cylinderAnchor/);
+  assert.match(comparisonCss, /\.cylinderPackedAnchor/);
+  assert.match(comparisonCss, /\.isometricCylinder/);
+  assert.match(comparisonCss, /\.cylinderBody/);
+  assert.match(comparisonCss, /\.cylinderCap/);
   assert.match(comparisonCss, /\.cylinderAxis_(length|width|height)/);
+  assert.match(comparisonCss, /\.cylinderAxis_length \{[\s\S]*?rotate\(30deg\)/);
+  assert.match(comparisonCss, /\.cylinderAxis_width \.cylinderBackCap/);
+  assert.match(comparisonCss, /\.cylinderAxis_height \{[\s\S]*?rotate\(-90deg\)/);
+  assert.match(comparisonComponent, /styles\.cylinderAnchor[\s\S]*?hasProtection \? styles\.cylinderPackedAnchor/);
+  assert.doesNotMatch(comparisonComponent, /cylinderProtectionAnchor/);
   assert.match(comparisonCss, /\.overflowAlert/);
   assert.doesNotMatch(comparisonCss, /\.front \.cuboid/);
   assert.doesNotMatch(page, /SkeletonPreview|codex-preview/);
