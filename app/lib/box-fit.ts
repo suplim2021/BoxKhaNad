@@ -123,6 +123,36 @@ function sizeUsedForFit(box: ParcelBox) {
   return { size: box.publishedSize, certainty: "likely" as const };
 }
 
+export function getAxisOverflow(rotatedItem: Size, box: ParcelBox): Size {
+  const boxSize = sizeUsedForFit(box).size;
+
+  return {
+    length: Math.max(0, rotatedItem.length - boxSize.length),
+    width: Math.max(0, rotatedItem.width - boxSize.width),
+    height: Math.max(0, rotatedItem.height - boxSize.height),
+  };
+}
+
+export function getClosestRotationForBox(packedItem: Size, box: ParcelBox): Size {
+  let bestRotation = getRotations(packedItem)[0];
+  let bestScore = Number.POSITIVE_INFINITY;
+  let bestWorstAxis = Number.POSITIVE_INFINITY;
+
+  for (const rotation of getRotations(packedItem)) {
+    const overflow = getAxisOverflow(rotation, box);
+    const score = overflow.length + overflow.width + overflow.height;
+    const worstAxis = Math.max(overflow.length, overflow.width, overflow.height);
+
+    if (score < bestScore || (score === bestScore && worstAxis < bestWorstAxis)) {
+      bestRotation = rotation;
+      bestScore = score;
+      bestWorstAxis = worstAxis;
+    }
+  }
+
+  return bestRotation;
+}
+
 function matchOneBox(packedItem: Size, box: ParcelBox): BoxMatch | null {
   const boxForFit = sizeUsedForFit(box);
   let bestMatch: BoxMatch | null = null;
@@ -172,18 +202,8 @@ function matchOneBox(packedItem: Size, box: ParcelBox): BoxMatch | null {
 }
 
 function tooSmallScore(packedItem: Size, box: ParcelBox) {
-  const boxSize = sizeUsedForFit(box).size;
-  let bestScore = Number.POSITIVE_INFINITY;
-
-  for (const rotatedItem of getRotations(packedItem)) {
-    const score =
-      Math.max(0, rotatedItem.length - boxSize.length) +
-      Math.max(0, rotatedItem.width - boxSize.width) +
-      Math.max(0, rotatedItem.height - boxSize.height);
-    bestScore = Math.min(bestScore, score);
-  }
-
-  return bestScore;
+  const overflow = getAxisOverflow(getClosestRotationForBox(packedItem, box), box);
+  return overflow.length + overflow.width + overflow.height;
 }
 
 export function findBoxes(

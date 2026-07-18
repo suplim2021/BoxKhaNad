@@ -12,8 +12,6 @@ import styles from "./BoxComparison.module.css";
 
 export type BoxShape = "rectangular" | "cylinder" | "sphere" | "irregular";
 
-export type BoxViewMode = "isometric" | "front";
-
 export interface VisualDimensions {
   /** Longest horizontal axis, in centimetres. */
   length: number;
@@ -43,7 +41,8 @@ export interface BoxComparisonProps {
   nextLarger?: VisualBox | null;
   packedItem: PackedItemVisual;
   shapeType: BoxShape;
-  viewMode?: BoxViewMode;
+  projectionScale?: number;
+  overflow?: boolean;
   compact?: boolean;
   className?: string;
 }
@@ -84,6 +83,7 @@ function getItemStyle(
   item: PackedItemVisual,
   box: VisualBox,
   projectionScale: number,
+  overflow: boolean,
 ): CSSVariables {
   const packed = item.packedDimensions ?? item.dimensions;
   const itemProjection = projectIsometric(item.dimensions, projectionScale);
@@ -96,16 +96,25 @@ function getItemStyle(
   const cylinderAxis = getCylinderAxis(item.dimensions);
   const itemCylinder = getCylinderMeasurements(item.dimensions, cylinderAxis);
   const packedCylinder = getCylinderMeasurements(packed, cylinderAxis);
+  const cylinderDiameterFactor = cylinderAxis === "height" ? 1.225 : 1.12;
+  const itemWidthLimit = (boxProjection.lengthX + boxProjection.depthX) * 0.84;
+  const itemHeightLimit = (
+    boxProjection.lengthY + boxProjection.depthY + boxProjection.vertical
+  ) * 0.8;
+  const packedWidthLimit = (boxProjection.lengthX + boxProjection.depthX) * 0.92;
+  const packedHeightLimit = (
+    boxProjection.lengthY + boxProjection.depthY + boxProjection.vertical
+  ) * 0.88;
 
   return {
-    "--item-w": `${clamp(itemWidth, 24, (boxProjection.lengthX + boxProjection.depthX) * 0.84)}px`,
-    "--item-h": `${clamp(itemHeight, 20, (boxProjection.lengthY + boxProjection.depthY + boxProjection.vertical) * 0.8)}px`,
-    "--packed-w": `${clamp(packedWidth, 30, (boxProjection.lengthX + boxProjection.depthX) * 0.92)}px`,
-    "--packed-h": `${clamp(packedHeight, 26, (boxProjection.lengthY + boxProjection.depthY + boxProjection.vertical) * 0.88)}px`,
+    "--item-w": `${overflow ? itemWidth : clamp(itemWidth, 24, itemWidthLimit)}px`,
+    "--item-h": `${overflow ? itemHeight : clamp(itemHeight, 20, itemHeightLimit)}px`,
+    "--packed-w": `${overflow ? packedWidth : clamp(packedWidth, 30, packedWidthLimit)}px`,
+    "--packed-h": `${overflow ? packedHeight : clamp(packedHeight, 26, packedHeightLimit)}px`,
     "--item-cylinder-axis": `${Math.max(22, itemCylinder.axis * projectionScale)}px`,
-    "--item-cylinder-diameter": `${Math.max(16, itemCylinder.diameter * projectionScale * 0.78)}px`,
+    "--item-cylinder-diameter": `${Math.max(16, itemCylinder.diameter * projectionScale * cylinderDiameterFactor)}px`,
     "--packed-cylinder-axis": `${Math.max(28, packedCylinder.axis * projectionScale)}px`,
-    "--packed-cylinder-diameter": `${Math.max(21, packedCylinder.diameter * projectionScale * 0.78)}px`,
+    "--packed-cylinder-diameter": `${Math.max(21, packedCylinder.diameter * projectionScale * cylinderDiameterFactor)}px`,
     "--item-iso-lx": `${itemProjection.lengthX}px`,
     "--item-iso-ly": `${itemProjection.lengthY}px`,
     "--item-iso-dx": `${itemProjection.depthX}px`,
@@ -136,11 +145,12 @@ function ParcelCuboid({ protectedLayer = false }: { protectedLayer?: boolean }) 
   );
 }
 
-function ItemInside({ item, shapeType, box, projectionScale }: {
+function ItemInside({ item, shapeType, box, projectionScale, overflow }: {
   item: PackedItemVisual;
   shapeType: BoxShape;
   box: VisualBox;
   projectionScale: number;
+  overflow: boolean;
 }) {
   const hasProtection = Boolean(item.packedDimensions);
   const cylinderAxis = getCylinderAxis(item.dimensions);
@@ -152,7 +162,7 @@ function ItemInside({ item, shapeType, box, projectionScale }: {
     return (
       <span
         className={styles.contents}
-        style={getItemStyle(item, box, projectionScale)}
+        style={getItemStyle(item, box, projectionScale, overflow)}
         aria-hidden="true"
       >
         {hasProtection ? <ParcelCuboid protectedLayer /> : null}
@@ -164,7 +174,7 @@ function ItemInside({ item, shapeType, box, projectionScale }: {
   return (
     <span
       className={styles.contents}
-      style={getItemStyle(item, box, projectionScale)}
+      style={getItemStyle(item, box, projectionScale, overflow)}
       aria-hidden="true"
     >
       {hasProtection ? (
@@ -254,17 +264,22 @@ export function BoxComparison({
   nextLarger,
   packedItem,
   shapeType,
-  viewMode = "isometric",
+  projectionScale,
+  overflow = false,
   compact = false,
   className,
 }: BoxComparisonProps) {
   const [selectedState, setSelectedState] = useState<BoxState>("recommended");
   const boxes = [recommended, nearestTooSmall, nextLarger].filter((box): box is VisualBox => Boolean(box));
-  const projectionScale = fitIsometricScale(boxes.map(({ dimensions }) => dimensions));
+  const activeProjectionScale = projectionScale ?? fitIsometricScale(
+    boxes.map(({ dimensions }) => dimensions),
+  );
   const bare = formatDimensions(packedItem.dimensions);
   const packed = formatDimensions(packedItem.packedDimensions ?? packedItem.dimensions);
   const summary = [
-    `กล่องที่น่าจะเหมาะ ${recommended.code} ขนาด ${formatDimensions(recommended.dimensions)} เซนติเมตร`,
+    overflow
+      ? `พัสดุใหญ่เกินกล่องที่ใกล้เคียงที่สุด ${recommended.code} ขนาด ${formatDimensions(recommended.dimensions)} เซนติเมตร`
+      : `กล่องที่น่าจะเหมาะ ${recommended.code} ขนาด ${formatDimensions(recommended.dimensions)} เซนติเมตร`,
     nearestTooSmall ? `กล่อง ${nearestTooSmall.code} เล็กเกินไป` : "ไม่มีกล่องเล็กกว่าที่นำมาเปรียบเทียบ",
     nextLarger ? `กล่องถัดไป ${nextLarger.code}` : "ไม่มีกล่องใหญ่กว่าที่นำมาเปรียบเทียบ",
     `สิ่งของขนาด ${bare} เซนติเมตร หลังห่อขนาด ${packed} เซนติเมตร`,
@@ -279,7 +294,7 @@ export function BoxComparison({
     <section
       className={[
         styles.comparison,
-        styles[viewMode],
+        overflow ? styles.overflow : "",
         compact ? styles.compact : "",
         className,
       ].filter(Boolean).join(" ")}
@@ -294,34 +309,48 @@ export function BoxComparison({
             <Cuboid
               box={nextLarger}
               state="nextLarger"
-              projectionScale={projectionScale}
+              projectionScale={activeProjectionScale}
               isSelected={activeState === "nextLarger"}
             />
           ) : null}
           <Cuboid
             box={recommended}
             state="recommended"
-            projectionScale={projectionScale}
+            projectionScale={activeProjectionScale}
             isSelected={activeState === "recommended"}
           >
             <ItemInside
               item={packedItem}
               shapeType={shapeType}
               box={recommended}
-              projectionScale={projectionScale}
+              projectionScale={activeProjectionScale}
+              overflow={overflow}
             />
           </Cuboid>
           {nearestTooSmall ? (
             <Cuboid
               box={nearestTooSmall}
               state="tooSmall"
-              projectionScale={projectionScale}
+              projectionScale={activeProjectionScale}
               isSelected={activeState === "tooSmall"}
             />
           ) : null}
         </div>
       </div>
 
+      {overflow ? (
+        <p className={styles.overflowAlert} role="status">
+          พัสดุหลังห่อเกินขอบกล่อง — ยังไม่มีกล่องในรายการที่พอดี
+        </p>
+      ) : null}
+
+      {overflow ? (
+        <div className={styles.overflowReference}>
+          <span>กล่องที่ใกล้เคียงที่สุด แต่ยังเล็ก</span>
+          <strong>{recommended.code}</strong>
+          <small>{formatDimensions(recommended.dimensions)} ซม.</small>
+        </div>
+      ) : (
       <div className={styles.choiceRail} role="group" aria-label="เลือกขนาดกล่องที่ต้องการเน้น">
         <ChoiceButton
           box={nearestTooSmall}
@@ -342,6 +371,7 @@ export function BoxComparison({
           onSelect={() => setSelectedState("nextLarger")}
         />
       </div>
+      )}
 
       <dl className={styles.textSummary}>
         <div>

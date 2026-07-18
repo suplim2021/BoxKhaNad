@@ -461,16 +461,14 @@ a:focus-visible {
 }
 
 .chip-row,
-.catalog-filter,
-.view-toggle {
+.catalog-filter {
   display: flex;
   flex-wrap: wrap;
   gap: 7px;
 }
 
 .chip-row button,
-.catalog-filter button,
-.view-toggle button {
+.catalog-filter button {
   min-height: 44px;
   padding: 8px 12px;
   border: 1px solid var(--line);
@@ -483,8 +481,7 @@ a:focus-visible {
 }
 
 .chip-row button.is-selected,
-.catalog-filter button.is-selected,
-.view-toggle button.is-selected {
+.catalog-filter button.is-selected {
   border-color: var(--mint-dark);
   background: var(--mint);
   color: #103b37;
@@ -504,22 +501,6 @@ a:focus-visible {
   margin-bottom: 14px;
 }
 
-.view-toggle {
-  flex: 0 0 auto;
-  gap: 3px;
-  padding: 3px;
-  border-radius: 999px;
-  background: #f4e7d3;
-}
-
-.view-toggle button {
-  min-height: 44px;
-  padding: 6px 9px;
-  border: 0;
-  background: transparent;
-  font-size: 0.62rem;
-}
-
 .catalog-filter {
   margin-bottom: 12px;
 }
@@ -536,6 +517,16 @@ a:focus-visible {
   padding: 14px;
   border-radius: 20px;
   background: linear-gradient(135deg, #ffe1a7, #fff0cf);
+}
+
+.recommendation-panel.is-overflow {
+  border-color: rgb(190 65 48 / 32%);
+  background: #fff0e8;
+}
+
+.recommendation-panel.is-overflow .recommendation-code {
+  background: #c54e3d;
+  box-shadow: 0 5px 0 #943629;
 }
 
 .recommendation-code {
@@ -629,6 +620,12 @@ a:focus-visible {
   margin: 0;
   font-size: 0.67rem;
   line-height: 1.55;
+}
+
+.source-warning.overflow-warning {
+  border-color: #df8e77;
+  background: #fff0e8;
+  color: #7e352a;
 }
 
 .empty-result {

@@ -5,6 +5,8 @@ import {
   calculatePackedSize,
   checkCatalog,
   findBoxes,
+  getAxisOverflow,
+  getClosestRotationForBox,
   getRotations,
   type ItemInput,
   type ParcelBox,
@@ -135,6 +137,21 @@ test("finds the deterministic nearest too-small box", () => {
   );
   assert.equal(results.recommended?.box.id, "large");
   assert.equal(results.nearestTooSmall?.id, "medium");
+});
+
+test("finds the least-overflow rotation for a box that is too small", () => {
+  const box = catalog[0];
+  const rotation = getClosestRotationForBox(
+    { length: 21, width: 9, height: 4 },
+    box,
+  );
+
+  assert.deepEqual(rotation, { length: 9, width: 21, height: 4 });
+  assert.deepEqual(getAxisOverflow(rotation, box), {
+    length: 0,
+    width: 1,
+    height: 0,
+  });
 });
 
 test("returns no match when every box is too small", () => {

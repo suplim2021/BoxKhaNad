@@ -3,19 +3,21 @@
 import { useId, useState, type CSSProperties } from "react";
 import BoxComparison, {
   type BoxShape,
-  type BoxViewMode,
   type VisualBox,
 } from "./BoxComparison";
 import { parcelBoxes } from "../data/boxes";
 import {
   calculateBareRotation,
   findBoxes,
+  getAxisOverflow,
+  getClosestRotationForBox,
   type CatalogFilter,
   type ItemInput,
   type ParcelBox,
   type Shape,
   type Size,
 } from "../lib/box-fit";
+import { fitIsometricScale } from "../lib/isometric";
 
 const shapeOptions: Array<{
   value: Shape;
@@ -46,6 +48,10 @@ const MAX_CATALOG_AXIS = Math.max(
   ...parcelBoxes.flatMap(({ publishedSize }) => Object.values(publishedSize)),
 );
 
+const CATALOG_ISOMETRIC_SCALE = fitIsometricScale(
+  parcelBoxes.map(({ publishedSize }) => publishedSize),
+);
+
 function formatNumber(value: number) {
   return value.toLocaleString("th-TH", { maximumFractionDigits: 2 });
 }
@@ -60,6 +66,12 @@ function visualBox(box: ParcelBox): VisualBox {
     name: box.family,
     dimensions: box.publishedSize,
   };
+}
+
+function displayBoxFamily(box: ParcelBox) {
+  return box.catalog === "thailand-post"
+    ? "กล่องพัสดุไปรษณีย์"
+    : "กล่องพัสดุทั่วไป A/B/C";
 }
 
 function NumberField({
@@ -174,7 +186,6 @@ export default function BoxCalculator() {
   const [protection, setProtection] = useState(1);
   const [customProtection, setCustomProtection] = useState(false);
   const [catalog, setCatalog] = useState<CatalogFilter>("all");
-  const [viewMode, setViewMode] = useState<BoxViewMode>("isometric");
 
   const itemInput: ItemInput = {
     shape,
@@ -195,6 +206,18 @@ export default function BoxCalculator() {
   const chosenShape = shapeOptions.find((option) => option.value === shape);
   const visualShape: BoxShape = shape === "box" ? "rectangular" : shape;
   const recommendation = results?.recommended;
+  const overflowBox = !recommendation ? results?.nearestTooSmall : null;
+  const overflowRotation = results && overflowBox
+    ? getClosestRotationForBox(results.packedItem, overflowBox)
+    : null;
+  const visualMatch = recommendation
+    ? { box: recommendation.box, rotatedItem: recommendation.rotatedItem, overflow: false }
+    : overflowBox && overflowRotation
+      ? { box: overflowBox, rotatedItem: overflowRotation, overflow: true }
+      : null;
+  const visualOverflow = visualMatch?.overflow
+    ? getAxisOverflow(visualMatch.rotatedItem, visualMatch.box)
+    : null;
 
   function updateSize(axis: keyof Size, value: number) {
     setSize((current) => ({ ...current, [axis]: value }));
@@ -251,20 +274,21 @@ export default function BoxCalculator() {
             </div>
           </div>
 
-          {recommendation && results ? (
+          {visualMatch && results ? (
             <BoxComparison
               className="mobile-live-visual"
               compact
-              recommended={visualBox(recommendation.box)}
-              nearestTooSmall={results.nearestTooSmall ? visualBox(results.nearestTooSmall) : null}
-              nextLarger={results.nextLarger ? visualBox(results.nextLarger.box) : null}
+              recommended={visualBox(visualMatch.box)}
+              nearestTooSmall={!visualMatch.overflow && results.nearestTooSmall ? visualBox(results.nearestTooSmall) : null}
+              nextLarger={!visualMatch.overflow && results.nextLarger ? visualBox(results.nextLarger.box) : null}
               packedItem={{
                 label: chosenShape?.label,
-                dimensions: calculateBareRotation(recommendation.rotatedItem, itemInput),
-                packedDimensions: recommendation.rotatedItem,
+                dimensions: calculateBareRotation(visualMatch.rotatedItem, itemInput),
+                packedDimensions: visualMatch.rotatedItem,
               }}
               shapeType={visualShape}
-              viewMode={viewMode}
+              projectionScale={CATALOG_ISOMETRIC_SCALE}
+              overflow={visualMatch.overflow}
             />
           ) : null}
 
@@ -336,10 +360,6 @@ export default function BoxCalculator() {
               <p className="eyebrow">ผลลัพธ์ทันที</p>
               <h2 id="result-title">กล่องที่น่าจะเหมาะ</h2>
             </div>
-            <div className="view-toggle" aria-label="รูปแบบภาพ">
-              <button type="button" aria-pressed={viewMode === "isometric"} className={viewMode === "isometric" ? "is-selected" : ""} onClick={() => setViewMode("isometric")}>ไอโซเมตริก</button>
-              <button type="button" aria-pressed={viewMode === "front"} className={viewMode === "front" ? "is-selected" : ""} onClick={() => setViewMode("front")}>ด้านหน้า</button>
-            </div>
           </div>
 
           <fieldset className="catalog-filter">
@@ -358,40 +378,43 @@ export default function BoxCalculator() {
           </fieldset>
 
           <p className="sr-only" aria-live="polite" aria-atomic="true">
-            {recommendation
-              ? `กล่องที่น่าจะเหมาะ ${recommendation.box.code} ขนาด ${formatSize(recommendation.box.publishedSize)}`
+            {visualMatch
+              ? visualMatch.overflow
+                ? `ยังไม่มีกล่องที่พอดี กล่องที่ใกล้เคียงที่สุดคือ ${visualMatch.box.code} ขนาด ${formatSize(visualMatch.box.publishedSize)}`
+                : `กล่องที่น่าจะเหมาะ ${visualMatch.box.code} ขนาด ${formatSize(visualMatch.box.publishedSize)}`
               : "ยังไม่พบกล่องที่น่าจะเหมาะ"}
           </p>
           <div>
             {!validInput ? (
               <div className="empty-result">กรอกขนาดมากกว่า 0 เพื่อดูผล</div>
-            ) : recommendation && results ? (
+            ) : visualMatch && results ? (
               <>
                 <BoxComparison
                   className="desktop-result-visual"
-                  recommended={visualBox(recommendation.box)}
-                  nearestTooSmall={results.nearestTooSmall ? visualBox(results.nearestTooSmall) : null}
-                  nextLarger={results.nextLarger ? visualBox(results.nextLarger.box) : null}
-                   packedItem={{
-                     label: chosenShape?.label,
-                     dimensions: calculateBareRotation(
-                       recommendation.rotatedItem,
-                       itemInput,
-                     ),
-                     packedDimensions: recommendation.rotatedItem,
-                   }}
+                  recommended={visualBox(visualMatch.box)}
+                  nearestTooSmall={!visualMatch.overflow && results.nearestTooSmall ? visualBox(results.nearestTooSmall) : null}
+                  nextLarger={!visualMatch.overflow && results.nextLarger ? visualBox(results.nextLarger.box) : null}
+                  packedItem={{
+                    label: chosenShape?.label,
+                    dimensions: calculateBareRotation(
+                      visualMatch.rotatedItem,
+                      itemInput,
+                    ),
+                    packedDimensions: visualMatch.rotatedItem,
+                  }}
                   shapeType={visualShape}
-                  viewMode={viewMode}
+                  projectionScale={CATALOG_ISOMETRIC_SCALE}
+                  overflow={visualMatch.overflow}
                 />
 
-                <article className="recommendation-panel">
+                <article className={`recommendation-panel ${visualMatch.overflow ? "is-overflow" : ""}`}>
                   <div className="recommendation-code">
-                    <span>น่าจะเหมาะ</span>
-                    <strong>{recommendation.box.code}</strong>
+                    <span>{visualMatch.overflow ? "ยังเล็ก" : "น่าจะเหมาะ"}</span>
+                    <strong>{visualMatch.box.code}</strong>
                   </div>
                   <div className="recommendation-copy">
-                    <h3>{recommendation.box.family}</h3>
-                    <p>{formatSize(recommendation.box.publishedSize)}</p>
+                    <h3>{displayBoxFamily(visualMatch.box)}</h3>
+                    <p>{formatSize(visualMatch.box.publishedSize)}</p>
                   </div>
                 </article>
 
@@ -401,19 +424,29 @@ export default function BoxCalculator() {
                     <dd>{formatSize(results.packedItem)}</dd>
                   </div>
                    <div>
-                     <dt>ท่าที่ใช้คำนวณ</dt>
-                     <dd>{formatSize(recommendation.rotatedItem)}</dd>
+                     <dt>{visualMatch.overflow ? "ท่าที่เกินน้อยที่สุด" : "ท่าที่ใช้คำนวณ"}</dt>
+                     <dd>{formatSize(visualMatch.rotatedItem)}</dd>
                    </div>
                    <div>
-                     <dt>ส่วนต่างจากขนาดที่ประกาศ</dt>
-                     <dd>{formatSize(recommendation.clearance)}</dd>
+                     <dt>{visualMatch.overflow ? "ส่วนที่เกินกล่อง" : "ส่วนต่างจากขนาดที่ประกาศ"}</dt>
+                     <dd>
+                       {visualMatch.overflow && visualOverflow
+                         ? formatSize(visualOverflow)
+                         : recommendation
+                           ? formatSize(recommendation.clearance)
+                           : "—"}
+                     </dd>
                    </div>
                 </dl>
 
-                <aside className="source-warning">
+                <aside className={`source-warning ${visualMatch.overflow ? "overflow-warning" : ""}`}>
                   <span aria-hidden="true">ⓘ</span>
                   <p>
-                    <strong>ผลแบบเผื่อไว้:</strong> แหล่งข้อมูลระบุเพียง “ขนาด” แต่ไม่ยืนยันขนาดภายใน จึงควรวัดด้านในกล่องจริงก่อนซื้อจำนวนมาก
+                    {visualMatch.overflow ? (
+                      <><strong>ใหญ่เกินรายการกล่อง:</strong> ลดขนาดหรือวัสดุกันกระแทก หรือใช้กล่องขนาดกำหนดเอง</>
+                    ) : (
+                      <><strong>ผลแบบเผื่อไว้:</strong> แหล่งข้อมูลระบุเพียง “ขนาด” แต่ไม่ยืนยันขนาดภายใน จึงควรวัดด้านในกล่องจริงก่อนซื้อจำนวนมาก</>
+                    )}
                   </p>
                 </aside>
 
