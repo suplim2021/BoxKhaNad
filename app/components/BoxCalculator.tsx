@@ -42,6 +42,10 @@ const catalogOptions: Array<{ value: CatalogFilter; label: string }> = [
   { value: "common-thai", label: "A / B / C" },
 ];
 
+const MAX_CATALOG_AXIS = Math.max(
+  ...parcelBoxes.flatMap(({ publishedSize }) => Object.values(publishedSize)),
+);
+
 function formatNumber(value: number) {
   return value.toLocaleString("th-TH", { maximumFractionDigits: 2 });
 }
@@ -90,21 +94,26 @@ function NumberField({
 function DimensionControl({
   label,
   value,
+  max,
   onChange,
 }: {
   label: string;
   value: number;
+  max: number;
   onChange: (value: number) => void;
 }) {
   const id = useId();
   const min = 0.5;
   const step = 0.5;
-  const max = Math.max(60, Math.ceil(value / 10) * 10);
   const progress = Math.min(100, Math.max(0, ((value - min) / (max - min)) * 100));
 
+  function setBoundedValue(next: number) {
+    onChange(Math.min(max, Math.max(min, next)));
+  }
+
   function nudge(direction: -1 | 1) {
-    const next = Math.max(min, Number((value + direction * step).toFixed(1)));
-    onChange(next);
+    const next = Number((value + direction * step).toFixed(1));
+    setBoundedValue(next);
   }
 
   return (
@@ -116,11 +125,12 @@ function DimensionControl({
             id={`${id}-number`}
             type="number"
             min={min}
+            max={max}
             step="0.1"
             inputMode="decimal"
             value={value}
             aria-label={`${label} หน่วยเซนติเมตร`}
-            onChange={(event) => onChange(Number(event.target.value))}
+            onChange={(event) => setBoundedValue(Number(event.target.value))}
           />
           <span aria-hidden="true">ซม.</span>
         </span>
@@ -140,12 +150,17 @@ function DimensionControl({
           min={min}
           max={max}
           step={step}
-          value={Math.max(min, value)}
+          value={Math.min(max, Math.max(min, value))}
           aria-label={`ปรับ${label}`}
           style={{ "--range-progress": `${progress}%` } as CSSProperties}
-          onChange={(event) => onChange(Number(event.target.value))}
+          onChange={(event) => setBoundedValue(Number(event.target.value))}
         />
-        <button type="button" aria-label={`เพิ่ม${label}`} onClick={() => nudge(1)}>
+        <button
+          type="button"
+          aria-label={`เพิ่ม${label}`}
+          disabled={value >= max}
+          onClick={() => nudge(1)}
+        >
           +
         </button>
       </div>
@@ -258,16 +273,17 @@ export default function BoxCalculator() {
               <DimensionControl
                 label="เส้นผ่านศูนย์กลาง"
                 value={size.length}
+                max={MAX_CATALOG_AXIS}
                 onChange={(value) => updateSize("length", value)}
               />
             ) : (
               <>
-                <DimensionControl label="ยาว" value={size.length} onChange={(value) => updateSize("length", value)} />
-                <DimensionControl label="กว้าง" value={size.width} onChange={(value) => updateSize("width", value)} />
+                <DimensionControl label="ยาว" value={size.length} max={MAX_CATALOG_AXIS} onChange={(value) => updateSize("length", value)} />
+                <DimensionControl label="กว้าง" value={size.width} max={MAX_CATALOG_AXIS} onChange={(value) => updateSize("width", value)} />
               </>
             )}
             {shape !== "sphere" ? (
-              <DimensionControl label="สูง" value={size.height} onChange={(value) => updateSize("height", value)} />
+              <DimensionControl label="สูง" value={size.height} max={MAX_CATALOG_AXIS} onChange={(value) => updateSize("height", value)} />
             ) : null}
           </div>
 

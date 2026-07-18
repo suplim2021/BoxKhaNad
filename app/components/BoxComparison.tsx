@@ -2,6 +2,12 @@
 
 import { useState, type CSSProperties, type ReactNode } from "react";
 
+import {
+  fitIsometricScale,
+  getCylinderAxis,
+  getCylinderMeasurements,
+  projectIsometric,
+} from "../lib/isometric";
 import styles from "./BoxComparison.module.css";
 
 export type BoxShape = "rectangular" | "cylinder" | "sphere" | "irregular";
@@ -56,58 +62,122 @@ function clamp(value: number, min: number, max: number) {
   return Math.min(Math.max(value, min), max);
 }
 
-function finitePositive(value: number) {
-  return Number.isFinite(value) && value > 0 ? value : 1;
-}
-
 function formatDimensions({ length, width, height }: VisualDimensions) {
   const format = (value: number) => value.toLocaleString("th-TH", { maximumFractionDigits: 2 });
   return `${format(length)} × ${format(width)} × ${format(height)}`;
 }
 
-function getBoxStyle(dimensions: VisualDimensions, maximumAxis: number): CSSVariables {
-  const length = finitePositive(dimensions.length);
-  const width = finitePositive(dimensions.width);
-  const height = finitePositive(dimensions.height);
-  const lengthX = clamp((length / maximumAxis) * 132, 62, 132);
-  const depthX = clamp((width / maximumAxis) * 76, 32, 76);
+function getBoxStyle(dimensions: VisualDimensions, projectionScale: number): CSSVariables {
+  const projection = projectIsometric(dimensions, projectionScale);
 
   return {
-    "--iso-lx": `${lengthX}px`,
-    "--iso-ly": `${lengthX * 0.46}px`,
-    "--iso-dx": `${depthX}px`,
-    "--iso-dy": `${depthX * 0.46}px`,
-    "--iso-h": `${clamp((height / maximumAxis) * 112, 48, 112)}px`,
+    "--iso-lx": `${projection.lengthX}px`,
+    "--iso-ly": `${projection.lengthY}px`,
+    "--iso-dx": `${projection.depthX}px`,
+    "--iso-dy": `${projection.depthY}px`,
+    "--iso-h": `${projection.vertical}px`,
+    "--iso-floor-half": `${(projection.lengthY + projection.depthY) / 2}px`,
   };
 }
 
-function getItemStyle(item: PackedItemVisual, box: VisualBox): CSSVariables {
+function getItemStyle(
+  item: PackedItemVisual,
+  box: VisualBox,
+  projectionScale: number,
+): CSSVariables {
   const packed = item.packedDimensions ?? item.dimensions;
-  const itemWidth = clamp(item.dimensions.length / finitePositive(box.dimensions.length), 0.18, 0.82);
-  const itemHeight = clamp(item.dimensions.height / finitePositive(box.dimensions.height), 0.18, 0.76);
-  const packedWidth = clamp(packed.length / finitePositive(box.dimensions.length), itemWidth, 0.9);
-  const packedHeight = clamp(packed.height / finitePositive(box.dimensions.height), itemHeight, 0.84);
+  const itemProjection = projectIsometric(item.dimensions, projectionScale);
+  const packedProjection = projectIsometric(packed, projectionScale);
+  const boxProjection = projectIsometric(box.dimensions, projectionScale);
+  const itemWidth = itemProjection.lengthX + itemProjection.depthX;
+  const itemHeight = itemProjection.lengthY + itemProjection.depthY + itemProjection.vertical;
+  const packedWidth = packedProjection.lengthX + packedProjection.depthX;
+  const packedHeight = packedProjection.lengthY + packedProjection.depthY + packedProjection.vertical;
+  const cylinderAxis = getCylinderAxis(item.dimensions);
+  const itemCylinder = getCylinderMeasurements(item.dimensions, cylinderAxis);
+  const packedCylinder = getCylinderMeasurements(packed, cylinderAxis);
 
   return {
-    "--item-w": `${itemWidth * 100}%`,
-    "--item-h": `${itemHeight * 100}%`,
-    "--packed-w": `${packedWidth * 100}%`,
-    "--packed-h": `${packedHeight * 100}%`,
+    "--item-w": `${clamp(itemWidth, 24, (boxProjection.lengthX + boxProjection.depthX) * 0.84)}px`,
+    "--item-h": `${clamp(itemHeight, 20, (boxProjection.lengthY + boxProjection.depthY + boxProjection.vertical) * 0.8)}px`,
+    "--packed-w": `${clamp(packedWidth, 30, (boxProjection.lengthX + boxProjection.depthX) * 0.92)}px`,
+    "--packed-h": `${clamp(packedHeight, 26, (boxProjection.lengthY + boxProjection.depthY + boxProjection.vertical) * 0.88)}px`,
+    "--item-cylinder-axis": `${Math.max(22, itemCylinder.axis * projectionScale)}px`,
+    "--item-cylinder-diameter": `${Math.max(16, itemCylinder.diameter * projectionScale * 0.78)}px`,
+    "--packed-cylinder-axis": `${Math.max(28, packedCylinder.axis * projectionScale)}px`,
+    "--packed-cylinder-diameter": `${Math.max(21, packedCylinder.diameter * projectionScale * 0.78)}px`,
+    "--item-iso-lx": `${itemProjection.lengthX}px`,
+    "--item-iso-ly": `${itemProjection.lengthY}px`,
+    "--item-iso-dx": `${itemProjection.depthX}px`,
+    "--item-iso-dy": `${itemProjection.depthY}px`,
+    "--item-iso-h": `${itemProjection.vertical}px`,
+    "--item-floor-half": `${(itemProjection.lengthY + itemProjection.depthY) / 2}px`,
+    "--packed-iso-lx": `${packedProjection.lengthX}px`,
+    "--packed-iso-ly": `${packedProjection.lengthY}px`,
+    "--packed-iso-dx": `${packedProjection.depthX}px`,
+    "--packed-iso-dy": `${packedProjection.depthY}px`,
+    "--packed-iso-h": `${packedProjection.vertical}px`,
+    "--packed-floor-half": `${(packedProjection.lengthY + packedProjection.depthY) / 2}px`,
   };
 }
 
-function ItemInside({ item, shapeType, box }: {
+function ParcelCuboid({ protectedLayer = false }: { protectedLayer?: boolean }) {
+  return (
+    <span
+      className={[
+        styles.projectedParcel,
+        protectedLayer ? styles.protectionCuboid : styles.itemCuboid,
+      ].join(" ")}
+    >
+      <span className={`${styles.parcelFace} ${styles.parcelFrontFace}`} />
+      <span className={`${styles.parcelFace} ${styles.parcelRightFace}`} />
+      <span className={`${styles.parcelFace} ${styles.parcelTopFace}`} />
+    </span>
+  );
+}
+
+function ItemInside({ item, shapeType, box, projectionScale }: {
   item: PackedItemVisual;
   shapeType: BoxShape;
   box: VisualBox;
+  projectionScale: number;
 }) {
   const hasProtection = Boolean(item.packedDimensions);
+  const cylinderAxis = getCylinderAxis(item.dimensions);
+  const cylinderOrientation = shapeType === "cylinder"
+    ? styles[`cylinderAxis_${cylinderAxis}`]
+    : "";
+
+  if (shapeType === "rectangular") {
+    return (
+      <span
+        className={styles.contents}
+        style={getItemStyle(item, box, projectionScale)}
+        aria-hidden="true"
+      >
+        {hasProtection ? <ParcelCuboid protectedLayer /> : null}
+        <ParcelCuboid />
+      </span>
+    );
+  }
 
   return (
-    <span className={styles.contents} style={getItemStyle(item, box)} aria-hidden="true">
-      {hasProtection ? <span className={styles.protection} /> : null}
+    <span
+      className={styles.contents}
+      style={getItemStyle(item, box, projectionScale)}
+      aria-hidden="true"
+    >
+      {hasProtection ? (
+        <span
+          className={[
+            styles.protection,
+            shapeType === "cylinder" ? styles.shape_cylinder : "",
+            cylinderOrientation,
+          ].filter(Boolean).join(" ")}
+        />
+      ) : null}
       <span
-        className={[styles.item, styles[`shape_${shapeType}`]]
+        className={[styles.item, styles[`shape_${shapeType}`], cylinderOrientation]
           .filter(Boolean)
           .join(" ")}
       />
@@ -118,13 +188,13 @@ function ItemInside({ item, shapeType, box }: {
 function Cuboid({
   box,
   state,
-  maximumAxis,
+  projectionScale,
   isSelected,
   children,
 }: {
   box: VisualBox;
   state: BoxState;
-  maximumAxis: number;
+  projectionScale: number;
   isSelected: boolean;
   children?: ReactNode;
 }) {
@@ -135,7 +205,7 @@ function Cuboid({
         styles[state],
         isSelected ? styles.selectedLayer : styles.mutedLayer,
       ].join(" ")}
-      style={getBoxStyle(box.dimensions, maximumAxis)}
+      style={getBoxStyle(box.dimensions, projectionScale)}
       aria-hidden="true"
     >
       <span className={`${styles.face} ${styles.frontFace}`} />
@@ -190,10 +260,7 @@ export function BoxComparison({
 }: BoxComparisonProps) {
   const [selectedState, setSelectedState] = useState<BoxState>("recommended");
   const boxes = [recommended, nearestTooSmall, nextLarger].filter((box): box is VisualBox => Boolean(box));
-  const maximumAxis = Math.max(
-    1,
-    ...boxes.flatMap(({ dimensions }) => [dimensions.length, dimensions.width, dimensions.height].map(finitePositive)),
-  );
+  const projectionScale = fitIsometricScale(boxes.map(({ dimensions }) => dimensions));
   const bare = formatDimensions(packedItem.dimensions);
   const packed = formatDimensions(packedItem.packedDimensions ?? packedItem.dimensions);
   const summary = [
@@ -227,23 +294,28 @@ export function BoxComparison({
             <Cuboid
               box={nextLarger}
               state="nextLarger"
-              maximumAxis={maximumAxis}
+              projectionScale={projectionScale}
               isSelected={activeState === "nextLarger"}
             />
           ) : null}
           <Cuboid
             box={recommended}
             state="recommended"
-            maximumAxis={maximumAxis}
+            projectionScale={projectionScale}
             isSelected={activeState === "recommended"}
           >
-            <ItemInside item={packedItem} shapeType={shapeType} box={recommended} />
+            <ItemInside
+              item={packedItem}
+              shapeType={shapeType}
+              box={recommended}
+              projectionScale={projectionScale}
+            />
           </Cuboid>
           {nearestTooSmall ? (
             <Cuboid
               box={nearestTooSmall}
               state="tooSmall"
-              maximumAxis={maximumAxis}
+              projectionScale={projectionScale}
               isSelected={activeState === "tooSmall"}
             />
           ) : null}

@@ -42,6 +42,7 @@ test("server-renders the BoxKhaNad calculator", async () => {
   assert.match(html, /ไอโซเมตริก/);
   assert.match(html, /กล่องพัสดุทั่วไป A\/B\/C/);
   assert.match(html, /type="range"/);
+  assert.match(html, /max="45"/);
   assert.match(html, /aria-label="เลือกขนาดกล่องที่ต้องการเน้น"/);
   assert.match(html, /เพิ่มยาว/);
   assert.match(html, /ส่วนต่างจากขนาดที่ประกาศ/);
@@ -65,6 +66,9 @@ test("removes the disposable starter and metadata", async () => {
   assert.match(layout, /BoxKhaNad/);
   assert.match(css, /Playpen Sans Thai/);
   assert.match(comparisonCss, /cubic-bezier\(0\.22, 1, 0\.36, 1\)/);
+  assert.match(comparisonCss, /bottom: calc\(44px - var\(--iso-floor-half\)\)/);
+  assert.match(comparisonCss, /\.projectedParcel/);
+  assert.match(comparisonCss, /\.cylinderAxis_(length|width|height)/);
   assert.doesNotMatch(page, /SkeletonPreview|codex-preview/);
   assert.doesNotMatch(packageJson, /react-loading-skeleton/);
   assert.match(css, /\.view-toggle button \{[\s\S]*?min-height: 44px;/);

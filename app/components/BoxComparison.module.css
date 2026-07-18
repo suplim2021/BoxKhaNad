@@ -59,8 +59,9 @@
   --iso-dx: 38px;
   --iso-dy: 17px;
   --iso-h: 58px;
+  --iso-floor-half: 25px;
   position: absolute;
-  bottom: 20px;
+  bottom: calc(44px - var(--iso-floor-half));
   left: 50%;
   width: calc(var(--iso-lx) + var(--iso-dx));
   height: calc(var(--iso-ly) + var(--iso-dy) + var(--iso-h));
@@ -198,6 +199,105 @@
   pointer-events: none;
 }
 
+.projectedParcel {
+  --parcel-lx: 54px;
+  --parcel-ly: 31px;
+  --parcel-dx: 36px;
+  --parcel-dy: 21px;
+  --parcel-h: 34px;
+  --parcel-floor-half: 26px;
+  position: absolute;
+  left: 50%;
+  width: calc(var(--parcel-lx) + var(--parcel-dx));
+  height: calc(var(--parcel-ly) + var(--parcel-dy) + var(--parcel-h));
+  transform: translateX(-50%);
+  transform-origin: center bottom;
+  transition:
+    bottom 560ms cubic-bezier(0.22, 1, 0.36, 1),
+    width 560ms cubic-bezier(0.22, 1, 0.36, 1),
+    height 560ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.itemCuboid {
+  --parcel-lx: var(--item-iso-lx);
+  --parcel-ly: var(--item-iso-ly);
+  --parcel-dx: var(--item-iso-dx);
+  --parcel-dy: var(--item-iso-dy);
+  --parcel-h: var(--item-iso-h);
+  --parcel-floor-half: var(--item-floor-half);
+  z-index: 2;
+  bottom: calc(var(--iso-floor-half) - var(--parcel-floor-half) + 3px);
+}
+
+.protectionCuboid {
+  --parcel-lx: var(--packed-iso-lx);
+  --parcel-ly: var(--packed-iso-ly);
+  --parcel-dx: var(--packed-iso-dx);
+  --parcel-dy: var(--packed-iso-dy);
+  --parcel-h: var(--packed-iso-h);
+  --parcel-floor-half: var(--packed-floor-half);
+  z-index: 1;
+  bottom: calc(var(--iso-floor-half) - var(--parcel-floor-half) + 1px);
+}
+
+.parcelFace {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  transition: clip-path 560ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.parcelFrontFace {
+  z-index: 2;
+  clip-path: polygon(
+    0 var(--parcel-dy),
+    var(--parcel-lx) calc(var(--parcel-ly) + var(--parcel-dy)),
+    var(--parcel-lx) calc(var(--parcel-ly) + var(--parcel-dy) + var(--parcel-h)),
+    0 calc(var(--parcel-dy) + var(--parcel-h))
+  );
+}
+
+.parcelRightFace {
+  z-index: 3;
+  clip-path: polygon(
+    calc(var(--parcel-dx) + var(--parcel-lx)) var(--parcel-ly),
+    var(--parcel-lx) calc(var(--parcel-ly) + var(--parcel-dy)),
+    var(--parcel-lx) calc(var(--parcel-ly) + var(--parcel-dy) + var(--parcel-h)),
+    calc(var(--parcel-dx) + var(--parcel-lx)) calc(var(--parcel-ly) + var(--parcel-h))
+  );
+}
+
+.parcelTopFace {
+  z-index: 1;
+  clip-path: polygon(
+    var(--parcel-dx) 0,
+    calc(var(--parcel-dx) + var(--parcel-lx)) var(--parcel-ly),
+    var(--parcel-lx) calc(var(--parcel-ly) + var(--parcel-dy)),
+    0 var(--parcel-dy)
+  );
+}
+
+.itemCuboid .parcelFrontFace {
+  background: rgb(41 166 173 / 84%);
+}
+
+.itemCuboid .parcelRightFace {
+  background: rgb(26 119 133 / 88%);
+}
+
+.itemCuboid .parcelTopFace {
+  background: rgb(112 220 207 / 92%);
+}
+
+.protectionCuboid .parcelFace {
+  background:
+    repeating-linear-gradient(150deg, rgb(34 184 151 / 38%) 0 4px, rgb(255 255 255 / 34%) 4px 8px),
+    rgb(95 219 190 / 28%);
+  filter: drop-shadow(0 0 0.7px #168b76);
+}
+
 .protection,
 .item {
   position: absolute;
@@ -232,20 +332,49 @@
 }
 
 .shape_cylinder {
+  width: var(--item-cylinder-axis);
+  height: var(--item-cylinder-diameter);
   clip-path: none;
-  border-radius: 50% 50% 18% 18% / 18% 18% 12% 12%;
+  border: 1px solid rgb(26 108 116 / 58%);
+  border-radius: 999px;
+  background:
+    linear-gradient(180deg, rgb(180 244 231 / 96%) 0%, rgb(56 181 184 / 94%) 48%, rgb(25 119 133 / 92%) 100%);
+  transform: translate(-50%, -50%) rotate(var(--cylinder-angle));
+  transform-origin: center;
 }
 
 .shape_cylinder::before {
   position: absolute;
-  top: -5px;
-  right: 18%;
-  left: 18%;
-  height: 8px;
-  border: 2px solid #2f6c75;
+  top: -1px;
+  right: -2px;
+  width: 18%;
+  height: calc(100% + 2px);
+  border: 1px solid #2f6c75;
   border-radius: 50%;
   background: #9ceadd;
+  box-shadow: inset 3px 0 4px rgb(255 255 255 / 35%);
   content: "";
+}
+
+.protection.shape_cylinder {
+  width: var(--packed-cylinder-axis);
+  height: var(--packed-cylinder-diameter);
+  border-color: rgb(22 139 118 / 52%);
+  background:
+    repeating-linear-gradient(150deg, rgb(34 184 151 / 34%) 0 4px, rgb(255 255 255 / 30%) 4px 8px),
+    rgb(95 219 190 / 38%);
+}
+
+.cylinderAxis_length {
+  --cylinder-angle: 30deg;
+}
+
+.cylinderAxis_width {
+  --cylinder-angle: -30deg;
+}
+
+.cylinderAxis_height {
+  --cylinder-angle: -90deg;
 }
 
 .shape_sphere {
@@ -429,6 +558,21 @@
   z-index: 4;
 }
 
+.front .projectedParcel {
+  bottom: 4px;
+  width: var(--parcel-lx);
+  height: var(--parcel-h);
+}
+
+.front .projectedParcel .parcelRightFace,
+.front .projectedParcel .parcelTopFace {
+  display: none;
+}
+
+.front .projectedParcel .parcelFrontFace {
+  clip-path: inset(0 round 6px);
+}
+
 .front .protection,
 .front .item {
   clip-path: inset(0 round 6px);
@@ -491,6 +635,8 @@
   .face,
   .protection,
   .item,
+  .projectedParcel,
+  .parcelFace,
   .choiceButton {
     transition: none;
   }
