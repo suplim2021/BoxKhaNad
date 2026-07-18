@@ -238,7 +238,7 @@ export default function BoxCalculator() {
               <h2 id="result-title">กล่องที่น่าจะเหมาะ</h2>
             </div>
             <div className="view-toggle" aria-label="รูปแบบภาพ">
-              <button type="button" aria-pressed={viewMode === "isometric"} className={viewMode === "isometric" ? "is-selected" : ""} onClick={() => setViewMode("isometric")}>มุมเอียง</button>
+              <button type="button" aria-pressed={viewMode === "isometric"} className={viewMode === "isometric" ? "is-selected" : ""} onClick={() => setViewMode("isometric")}>ไอโซเมตริก</button>
               <button type="button" aria-pressed={viewMode === "front"} className={viewMode === "front" ? "is-selected" : ""} onClick={() => setViewMode("front")}>ด้านหน้า</button>
             </div>
           </div>
@@ -317,9 +317,6 @@ export default function BoxCalculator() {
                   </p>
                 </aside>
 
-                <a className="source-link" href={recommendation.box.sourceUrl} target="_blank" rel="noreferrer">
-                  ดูแหล่งข้อมูลขนาดกล่อง ↗
-                </a>
               </>
             ) : (
               <div className="empty-result">

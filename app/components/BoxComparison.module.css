@@ -65,22 +65,21 @@
 .visualSlot {
   display: grid;
   width: 100%;
-  height: 126px;
+  height: 146px;
   place-items: end center;
-  padding-bottom: 18px;
+  padding-bottom: 12px;
 }
 
 .cuboid {
-  --box-w: 92px;
-  --box-h: 68px;
-  --box-d: 28px;
+  --iso-lx: 70px;
+  --iso-ly: 32px;
+  --iso-dx: 38px;
+  --iso-dy: 17px;
+  --iso-h: 58px;
   position: relative;
-  width: var(--box-w);
-  height: var(--box-h);
-  /* WHY: rotating one flat rectangle lets its three child faces read as a box. */
-  transform: translateX(calc(var(--box-d) * -0.12)) rotateX(-13deg) rotateY(30deg);
-  transform-style: preserve-3d;
-  transform-origin: 50% 100%;
+  width: calc(var(--iso-lx) + var(--iso-dx));
+  height: calc(var(--iso-ly) + var(--iso-dy) + var(--iso-h));
+  transform-origin: center bottom;
 }
 
 .recommended {
@@ -89,46 +88,58 @@
 
 .face {
   position: absolute;
+  inset: 0;
   display: block;
-  box-sizing: border-box;
-  border: 2px solid currentColor;
-  backface-visibility: hidden;
+  width: 100%;
+  height: 100%;
+  filter: drop-shadow(0 0 0.8px currentColor);
 }
 
 .frontFace {
-  inset: 0;
-  background: rgb(225 145 62 / 43%);
+  z-index: 3;
+  background: rgb(225 145 62 / 40%);
+  clip-path: polygon(
+    0 var(--iso-dy),
+    var(--iso-lx) calc(var(--iso-ly) + var(--iso-dy)),
+    var(--iso-lx) calc(var(--iso-ly) + var(--iso-dy) + var(--iso-h)),
+    0 calc(var(--iso-dy) + var(--iso-h))
+  );
 }
 
 .rightFace {
-  top: 0;
-  left: 100%;
-  width: var(--box-d);
-  height: 100%;
-  background: rgb(192 107 42 / 46%);
-  /* WHY: this face starts flat, then folds 90 degrees from the front edge. */
-  transform: rotateY(90deg);
-  transform-origin: left center;
+  z-index: 4;
+  background: rgb(192 107 42 / 47%);
+  clip-path: polygon(
+    calc(var(--iso-dx) + var(--iso-lx)) var(--iso-ly),
+    var(--iso-lx) calc(var(--iso-ly) + var(--iso-dy)),
+    var(--iso-lx) calc(var(--iso-ly) + var(--iso-dy) + var(--iso-h)),
+    calc(var(--iso-dx) + var(--iso-lx)) calc(var(--iso-ly) + var(--iso-h))
+  );
 }
 
 .topFace {
-  bottom: 100%;
-  left: 0;
-  width: 100%;
-  height: var(--box-d);
-  background: rgb(246 185 104 / 55%);
-  /* WHY: the same fold creates the lid without an image or canvas. */
-  transform: rotateX(-90deg);
-  transform-origin: bottom center;
+  z-index: 1;
+  background: rgb(255 205 133 / 52%);
+  clip-path: polygon(
+    var(--iso-dx) 0,
+    calc(var(--iso-dx) + var(--iso-lx)) var(--iso-ly),
+    var(--iso-lx) calc(var(--iso-ly) + var(--iso-dy)),
+    0 var(--iso-dy)
+  );
 }
 
 .recommended {
   color: #b96026;
-  filter: drop-shadow(0 10px 8px rgb(91 51 24 / 20%));
+  filter: drop-shadow(0 12px 8px rgb(91 51 24 / 22%));
 }
 
-.recommended .frontFace {
-  background: rgb(255 170 69 / 33%);
+.recommended .frontFace,
+.recommended .rightFace {
+  background: rgb(255 151 48 / 34%);
+}
+
+.recommended .topFace {
+  background: rgb(255 198 109 / 24%);
 }
 
 .tooSmall,
@@ -136,19 +147,12 @@
   color: rgb(120 91 72 / 45%);
   opacity: 0.63;
   filter: saturate(0.45);
-}
-
-.tooSmall {
-  transform: translateX(calc(var(--box-d) * -0.12)) rotateX(-13deg) rotateY(30deg) scale(0.82);
-}
-
-.nextLarger {
-  transform: translateX(calc(var(--box-d) * -0.12)) rotateX(-13deg) rotateY(30deg) scale(0.88);
+  transform: scale(0.78);
 }
 
 .tooSmall .frontFace {
   background:
-    linear-gradient(135deg, transparent 46%, rgb(155 75 67 / 38%) 47% 53%, transparent 54%),
+    linear-gradient(162deg, transparent 46%, rgb(155 75 67 / 42%) 47% 53%, transparent 54%),
     rgb(220 196 174 / 27%);
 }
 
@@ -158,43 +162,42 @@
 
 .contents {
   position: absolute;
-  z-index: 3;
+  z-index: 2;
   inset: 0;
-  display: grid;
-  place-items: end center;
   pointer-events: none;
 }
 
 .protection,
 .item {
   position: absolute;
-  bottom: 7%;
+  top: 52%;
   left: 50%;
   display: block;
-  transform: translateX(-50%);
+  clip-path: polygon(50% 0, 100% 24%, 100% 72%, 50% 100%, 0 72%, 0 24%);
+  transform: translate(-50%, -50%);
 }
 
 .protection {
   z-index: 1;
   width: var(--packed-w);
   height: var(--packed-h);
-  border: 2px dashed #19a487;
-  border-radius: 8px;
-  background: repeating-linear-gradient(135deg, rgb(85 210 183 / 22%) 0 5px, transparent 5px 10px);
+  background:
+    repeating-linear-gradient(150deg, rgb(34 184 151 / 34%) 0 4px, rgb(255 255 255 / 30%) 4px 8px),
+    rgb(95 219 190 / 22%);
+  filter: drop-shadow(0 0 1px #168b76);
 }
 
 .item {
   z-index: 2;
   width: var(--item-w);
   height: var(--item-h);
-  border: 2px solid #2f6c75;
-  border-radius: 7px;
   background: linear-gradient(145deg, #81e1d3, #30aab3);
-  box-shadow: inset -4px -5px 0 rgb(23 98 110 / 18%);
+  filter: drop-shadow(0 3px 1px rgb(23 98 110 / 24%));
 }
 
 .shape_cylinder {
-  border-radius: 48% 48% 18% 18% / 14% 14% 10% 10%;
+  clip-path: none;
+  border-radius: 50% 50% 18% 18% / 18% 18% 12% 12%;
 }
 
 .shape_cylinder::before {
@@ -213,12 +216,14 @@
   aspect-ratio: 1;
   width: min(var(--item-w), var(--item-h));
   height: auto;
+  clip-path: none;
   border-radius: 50%;
 }
 
 .shape_irregular {
+  clip-path: none;
   border-radius: 42% 26% 35% 21%;
-  transform: translateX(-50%) rotate(-7deg);
+  transform: translate(-50%, -50%) rotate(-7deg);
 }
 
 .stateLabel {
@@ -300,20 +305,32 @@
 }
 
 .front .cuboid {
-  transform: none;
-}
-
-.front .tooSmall {
-  transform: scale(0.82);
-}
-
-.front .nextLarger {
-  transform: scale(0.88);
+  width: var(--iso-lx);
+  height: var(--iso-h);
 }
 
 .front .rightFace,
 .front .topFace {
   display: none;
+}
+
+.front .frontFace {
+  clip-path: inset(0);
+}
+
+.front .contents {
+  z-index: 4;
+}
+
+.front .protection,
+.front .item {
+  clip-path: inset(0 round 6px);
+}
+
+.front .shape_cylinder,
+.front .shape_sphere,
+.front .shape_irregular {
+  clip-path: none;
 }
 
 .screenReaderOnly {
@@ -340,8 +357,8 @@
   }
 
   .visualSlot {
-    height: 116px;
-    transform: scale(0.88);
+    height: 136px;
+    transform: scale(0.9);
   }
 
   .boxLabel {

@@ -68,11 +68,15 @@ function getBoxStyle(dimensions: VisualDimensions, maximumAxis: number): CSSVari
   const length = finitePositive(dimensions.length);
   const width = finitePositive(dimensions.width);
   const height = finitePositive(dimensions.height);
+  const lengthX = clamp((length / maximumAxis) * 70, 36, 70);
+  const depthX = clamp((width / maximumAxis) * 42, 18, 42);
 
   return {
-    "--box-w": `${clamp((length / maximumAxis) * 104, 48, 104)}px`,
-    "--box-h": `${clamp((height / maximumAxis) * 82, 38, 82)}px`,
-    "--box-d": `${clamp((width / maximumAxis) * 34, 15, 34)}px`,
+    "--iso-lx": `${lengthX}px`,
+    "--iso-ly": `${lengthX * 0.46}px`,
+    "--iso-dx": `${depthX}px`,
+    "--iso-dy": `${depthX * 0.46}px`,
+    "--iso-h": `${clamp((height / maximumAxis) * 64, 28, 64)}px`,
   };
 }
 

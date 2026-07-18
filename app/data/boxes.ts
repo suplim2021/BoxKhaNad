@@ -69,7 +69,7 @@ export const parcelBoxes: ParcelBox[] = [
   {
     id: "hongthai-a-plus-6",
     catalog: "common-thai",
-    family: "Hong Thai Postal Box",
+    family: "กล่องพัสดุทั่วไป A/B/C",
     code: "A+6",
     publishedSize: { length: 20, width: 14, height: 12 },
     dimensionType: "unspecified",
@@ -80,7 +80,7 @@ export const parcelBoxes: ParcelBox[] = [
   {
     id: "hongthai-a",
     catalog: "common-thai",
-    family: "Hong Thai Postal Box",
+    family: "กล่องพัสดุทั่วไป A/B/C",
     code: "A",
     publishedSize: { length: 20, width: 14, height: 6 },
     dimensionType: "unspecified",
@@ -91,7 +91,7 @@ export const parcelBoxes: ParcelBox[] = [
   {
     id: "hongthai-2a",
     catalog: "common-thai",
-    family: "Hong Thai Postal Box",
+    family: "กล่องพัสดุทั่วไป A/B/C",
     code: "2A",
     publishedSize: { length: 19, width: 12, height: 14 },
     dimensionType: "unspecified",
@@ -102,7 +102,7 @@ export const parcelBoxes: ParcelBox[] = [
   {
     id: "hongthai-b",
     catalog: "common-thai",
-    family: "Hong Thai Postal Box",
+    family: "กล่องพัสดุทั่วไป A/B/C",
     code: "B",
     publishedSize: { length: 25, width: 17, height: 9 },
     dimensionType: "unspecified",
@@ -113,7 +113,7 @@ export const parcelBoxes: ParcelBox[] = [
   {
     id: "hongthai-2b",
     catalog: "common-thai",
-    family: "Hong Thai Postal Box",
+    family: "กล่องพัสดุทั่วไป A/B/C",
     code: "2B",
     publishedSize: { length: 25, width: 17, height: 18 },
     dimensionType: "unspecified",
@@ -124,7 +124,7 @@ export const parcelBoxes: ParcelBox[] = [
   {
     id: "hongthai-b-plus-7",
     catalog: "common-thai",
-    family: "Hong Thai Postal Box",
+    family: "กล่องพัสดุทั่วไป A/B/C",
     code: "B+7",
     publishedSize: { length: 25, width: 17, height: 16 },
     dimensionType: "unspecified",
@@ -135,7 +135,7 @@ export const parcelBoxes: ParcelBox[] = [
   {
     id: "hongthai-c",
     catalog: "common-thai",
-    family: "Hong Thai Postal Box",
+    family: "กล่องพัสดุทั่วไป A/B/C",
     code: "C",
     publishedSize: { length: 30, width: 20, height: 11 },
     dimensionType: "unspecified",
@@ -146,7 +146,7 @@ export const parcelBoxes: ParcelBox[] = [
   {
     id: "hongthai-cd",
     catalog: "common-thai",
-    family: "Hong Thai Postal Box",
+    family: "กล่องพัสดุทั่วไป A/B/C",
     code: "CD",
     publishedSize: { length: 15, width: 15, height: 15 },
     dimensionType: "unspecified",
@@ -157,7 +157,7 @@ export const parcelBoxes: ParcelBox[] = [
   {
     id: "hongthai-c-plus-9",
     catalog: "common-thai",
-    family: "Hong Thai Postal Box",
+    family: "กล่องพัสดุทั่วไป A/B/C",
     code: "C+9",
     publishedSize: { length: 30, width: 20, height: 20 },
     dimensionType: "unspecified",

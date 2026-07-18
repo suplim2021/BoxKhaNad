@@ -39,10 +39,13 @@ test("server-renders the BoxKhaNad calculator", async () => {
   assert.match(html, /วัสดุกันกระแทก/);
   assert.match(html, /aria-live="polite"/);
   assert.match(html, /aria-pressed="true"/);
+  assert.match(html, /ไอโซเมตริก/);
+  assert.match(html, /กล่องพัสดุทั่วไป A\/B\/C/);
   assert.match(html, /ส่วนต่างจากขนาดที่ประกาศ/);
   assert.match(html, /property="og:image" content="http:\/\/localhost\/og.png"/);
   assert.match(html, /property="og:image:alt" content="BoxKhaNad กล่องขนาดไหนถึงพอดี"/);
   assert.doesNotMatch(html, /codex-preview|react-loading-skeleton/);
+  assert.doesNotMatch(html, /Hong Thai Postal Box|ดูแหล่งข้อมูลขนาดกล่อง|source-link/);
 });
 
 test("removes the disposable starter and metadata", async () => {

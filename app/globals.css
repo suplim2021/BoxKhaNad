@@ -496,17 +496,6 @@ a:focus-visible {
   line-height: 1.55;
 }
 
-.source-link {
-  display: inline-flex;
-  min-height: 44px;
-  align-items: center;
-  margin-top: 6px;
-  color: var(--mint-dark);
-  font-size: 0.7rem;
-  font-weight: 900;
-  text-underline-offset: 3px;
-}
-
 .empty-result {
   display: grid;
   min-height: 300px;
