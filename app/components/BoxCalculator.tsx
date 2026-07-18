@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useId, useState, type CSSProperties } from "react";
 import BoxComparison, {
   type BoxShape,
   type BoxViewMode,
@@ -87,6 +87,72 @@ function NumberField({
   );
 }
 
+function DimensionControl({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: number;
+  onChange: (value: number) => void;
+}) {
+  const id = useId();
+  const min = 0.5;
+  const step = 0.5;
+  const max = Math.max(60, Math.ceil(value / 10) * 10);
+  const progress = Math.min(100, Math.max(0, ((value - min) / (max - min)) * 100));
+
+  function nudge(direction: -1 | 1) {
+    const next = Math.max(min, Number((value + direction * step).toFixed(1)));
+    onChange(next);
+  }
+
+  return (
+    <div className="dimension-control">
+      <div className="dimension-control-topline">
+        <label htmlFor={`${id}-number`}>{label}</label>
+        <span className="dimension-value">
+          <input
+            id={`${id}-number`}
+            type="number"
+            min={min}
+            step="0.1"
+            inputMode="decimal"
+            value={value}
+            aria-label={`${label} หน่วยเซนติเมตร`}
+            onChange={(event) => onChange(Number(event.target.value))}
+          />
+          <span aria-hidden="true">ซม.</span>
+        </span>
+      </div>
+      <div className="dimension-adjuster">
+        <button
+          type="button"
+          aria-label={`ลด${label}`}
+          disabled={value <= min}
+          onClick={() => nudge(-1)}
+        >
+          −
+        </button>
+        <input
+          className="dimension-range"
+          type="range"
+          min={min}
+          max={max}
+          step={step}
+          value={Math.max(min, value)}
+          aria-label={`ปรับ${label}`}
+          style={{ "--range-progress": `${progress}%` } as CSSProperties}
+          onChange={(event) => onChange(Number(event.target.value))}
+        />
+        <button type="button" aria-label={`เพิ่ม${label}`} onClick={() => nudge(1)}>
+          +
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export default function BoxCalculator() {
   const [shape, setShape] = useState<Shape>("box");
   const [size, setSize] = useState<Size>({ length: 12, width: 8, height: 5 });
@@ -170,21 +236,38 @@ export default function BoxCalculator() {
             </div>
           </div>
 
-          <div className={`dimension-grid ${shape === "sphere" ? "one-column" : ""}`}>
+          {recommendation && results ? (
+            <BoxComparison
+              className="mobile-live-visual"
+              compact
+              recommended={visualBox(recommendation.box)}
+              nearestTooSmall={results.nearestTooSmall ? visualBox(results.nearestTooSmall) : null}
+              nextLarger={results.nextLarger ? visualBox(results.nextLarger.box) : null}
+              packedItem={{
+                label: chosenShape?.label,
+                dimensions: calculateBareRotation(recommendation.rotatedItem, itemInput),
+                packedDimensions: recommendation.rotatedItem,
+              }}
+              shapeType={visualShape}
+              viewMode={viewMode}
+            />
+          ) : null}
+
+          <div className="dimension-grid">
             {shape === "cylinder" || shape === "sphere" ? (
-              <NumberField
+              <DimensionControl
                 label="เส้นผ่านศูนย์กลาง"
                 value={size.length}
                 onChange={(value) => updateSize("length", value)}
               />
             ) : (
               <>
-                <NumberField label="ยาว" value={size.length} onChange={(value) => updateSize("length", value)} />
-                <NumberField label="กว้าง" value={size.width} onChange={(value) => updateSize("width", value)} />
+                <DimensionControl label="ยาว" value={size.length} onChange={(value) => updateSize("length", value)} />
+                <DimensionControl label="กว้าง" value={size.width} onChange={(value) => updateSize("width", value)} />
               </>
             )}
             {shape !== "sphere" ? (
-              <NumberField label="สูง" value={size.height} onChange={(value) => updateSize("height", value)} />
+              <DimensionControl label="สูง" value={size.height} onChange={(value) => updateSize("height", value)} />
             ) : null}
           </div>
 
@@ -269,6 +352,7 @@ export default function BoxCalculator() {
             ) : recommendation && results ? (
               <>
                 <BoxComparison
+                  className="desktop-result-visual"
                   recommended={visualBox(recommendation.box)}
                   nearestTooSmall={results.nearestTooSmall ? visualBox(results.nearestTooSmall) : null}
                   nextLarger={results.nextLarger ? visualBox(results.nextLarger.box) : null}

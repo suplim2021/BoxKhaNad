@@ -13,11 +13,12 @@ People often know the size of an item but still have to mentally add bubble wrap
 ## Current features
 
 - Four item modes: rectangular/flat, cylinder, sphere, and irregular bounding box
+- Mobile dimension sliders with minus/plus controls and direct numeric entry
 - Protective-material presets or a custom thickness per side
 - Six-axis rotation checks with duplicate rotations removed
 - Thailand Post Ready-Made A-F and a separately sourced common Thai A/B/C-family catalog
 - All-catalog search with filters
-- A visual comparison: too small, recommended, and next larger
+- Selectable overlapping isometric boxes for too small, likely fit, and next larger, with eased size transitions
 - Mobile-first Thai interface with English-friendly data labels
 - Source and uncertainty warning for every recommendation
 - No account, backend, or runtime AI required
@@ -77,6 +78,8 @@ Unit tests cover protection math, shape bounds, unique rotations, rotated fits a
 - `tests/box-fit.test.ts` - understandable examples of the core rules
 - `docs/LEARNING_GUIDE_TH.md` - Thai code walkthrough for the project owner
 - `docs/BOX_DATA_RESEARCH.md` - source research and uncertainty decisions
+
+The interface uses React and code-native CSS geometry/animation; it does not require Three.js, canvas, or runtime AI.
 
 ## Collaboration with Codex and GPT-5.6
 

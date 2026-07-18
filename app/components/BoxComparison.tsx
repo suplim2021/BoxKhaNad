@@ -1,6 +1,6 @@
 "use client";
 
-import type { CSSProperties, ReactNode } from "react";
+import { useState, type CSSProperties, type ReactNode } from "react";
 
 import styles from "./BoxComparison.module.css";
 
@@ -38,6 +38,7 @@ export interface BoxComparisonProps {
   packedItem: PackedItemVisual;
   shapeType: BoxShape;
   viewMode?: BoxViewMode;
+  compact?: boolean;
   className?: string;
 }
 
@@ -68,15 +69,15 @@ function getBoxStyle(dimensions: VisualDimensions, maximumAxis: number): CSSVari
   const length = finitePositive(dimensions.length);
   const width = finitePositive(dimensions.width);
   const height = finitePositive(dimensions.height);
-  const lengthX = clamp((length / maximumAxis) * 70, 36, 70);
-  const depthX = clamp((width / maximumAxis) * 42, 18, 42);
+  const lengthX = clamp((length / maximumAxis) * 132, 62, 132);
+  const depthX = clamp((width / maximumAxis) * 76, 32, 76);
 
   return {
     "--iso-lx": `${lengthX}px`,
     "--iso-ly": `${lengthX * 0.46}px`,
     "--iso-dx": `${depthX}px`,
     "--iso-dy": `${depthX * 0.46}px`,
-    "--iso-h": `${clamp((height / maximumAxis) * 64, 28, 64)}px`,
+    "--iso-h": `${clamp((height / maximumAxis) * 112, 48, 112)}px`,
   };
 }
 
@@ -118,15 +119,25 @@ function Cuboid({
   box,
   state,
   maximumAxis,
+  isSelected,
   children,
 }: {
   box: VisualBox;
   state: BoxState;
   maximumAxis: number;
+  isSelected: boolean;
   children?: ReactNode;
 }) {
   return (
-    <div className={`${styles.cuboid} ${styles[state]}`} style={getBoxStyle(box.dimensions, maximumAxis)} aria-hidden="true">
+    <div
+      className={[
+        styles.cuboid,
+        styles[state],
+        isSelected ? styles.selectedLayer : styles.mutedLayer,
+      ].join(" ")}
+      style={getBoxStyle(box.dimensions, maximumAxis)}
+      aria-hidden="true"
+    >
       <span className={`${styles.face} ${styles.frontFace}`} />
       <span className={`${styles.face} ${styles.rightFace}`} />
       <span className={`${styles.face} ${styles.topFace}`} />
@@ -135,34 +146,35 @@ function Cuboid({
   );
 }
 
-function BoxChoice({
+function ChoiceButton({
   box,
   state,
-  maximumAxis,
-  children,
+  isSelected,
+  onSelect,
 }: {
   box?: VisualBox | null;
   state: BoxState;
-  maximumAxis: number;
-  children?: ReactNode;
+  isSelected: boolean;
+  onSelect: () => void;
 }) {
   return (
-    <div
-      className={[styles.choice, styles[`${state}Choice`]]
+    <button
+      type="button"
+      className={[styles.choiceButton, styles[`${state}Choice`]]
         .filter(Boolean)
         .join(" ")}
+      aria-pressed={isSelected}
+      disabled={!box}
+      onClick={onSelect}
     >
-      <div className={styles.visualSlot}>
-        {box ? <Cuboid box={box} state={state} maximumAxis={maximumAxis}>{children}</Cuboid> : <span className={styles.emptyMark}>—</span>}
-      </div>
       <span className={styles.stateLabel}>{box ? STATE_LABELS[state] : "ไม่มีตัวเลือก"}</span>
       {box ? (
         <span className={styles.boxLabel}>
           <strong>{box.code}</strong>
           <span>{formatDimensions(box.dimensions)} ซม.</span>
         </span>
-      ) : null}
-    </div>
+      ) : <span className={styles.emptyMark}>—</span>}
+    </button>
   );
 }
 
@@ -173,8 +185,10 @@ export function BoxComparison({
   packedItem,
   shapeType,
   viewMode = "isometric",
+  compact = false,
   className,
 }: BoxComparisonProps) {
+  const [selectedState, setSelectedState] = useState<BoxState>("recommended");
   const boxes = [recommended, nearestTooSmall, nextLarger].filter((box): box is VisualBox => Boolean(box));
   const maximumAxis = Math.max(
     1,
@@ -188,21 +202,73 @@ export function BoxComparison({
     nextLarger ? `กล่องถัดไป ${nextLarger.code}` : "ไม่มีกล่องใหญ่กว่าที่นำมาเปรียบเทียบ",
     `สิ่งของขนาด ${bare} เซนติเมตร หลังห่อขนาด ${packed} เซนติเมตร`,
   ].join(". ");
+  const activeState =
+    (selectedState === "tooSmall" && !nearestTooSmall) ||
+    (selectedState === "nextLarger" && !nextLarger)
+      ? "recommended"
+      : selectedState;
 
   return (
     <section
-      className={[styles.comparison, styles[viewMode], className].filter(Boolean).join(" ")}
+      className={[
+        styles.comparison,
+        styles[viewMode],
+        compact ? styles.compact : "",
+        className,
+      ].filter(Boolean).join(" ")}
       aria-label="ภาพเปรียบเทียบขนาดกล่อง"
     >
       <p className={styles.screenReaderOnly}>{summary}</p>
       <div className={styles.scene} aria-hidden="true">
         <span className={styles.backdropBlob} />
         <span className={styles.groundLine} />
-        <BoxChoice box={nearestTooSmall} state="tooSmall" maximumAxis={maximumAxis} />
-        <BoxChoice box={recommended} state="recommended" maximumAxis={maximumAxis}>
-          <ItemInside item={packedItem} shapeType={shapeType} box={recommended} />
-        </BoxChoice>
-        <BoxChoice box={nextLarger} state="nextLarger" maximumAxis={maximumAxis} />
+        <div className={styles.boxStack}>
+          {nextLarger ? (
+            <Cuboid
+              box={nextLarger}
+              state="nextLarger"
+              maximumAxis={maximumAxis}
+              isSelected={activeState === "nextLarger"}
+            />
+          ) : null}
+          <Cuboid
+            box={recommended}
+            state="recommended"
+            maximumAxis={maximumAxis}
+            isSelected={activeState === "recommended"}
+          >
+            <ItemInside item={packedItem} shapeType={shapeType} box={recommended} />
+          </Cuboid>
+          {nearestTooSmall ? (
+            <Cuboid
+              box={nearestTooSmall}
+              state="tooSmall"
+              maximumAxis={maximumAxis}
+              isSelected={activeState === "tooSmall"}
+            />
+          ) : null}
+        </div>
+      </div>
+
+      <div className={styles.choiceRail} role="group" aria-label="เลือกขนาดกล่องที่ต้องการเน้น">
+        <ChoiceButton
+          box={nearestTooSmall}
+          state="tooSmall"
+          isSelected={activeState === "tooSmall"}
+          onSelect={() => setSelectedState("tooSmall")}
+        />
+        <ChoiceButton
+          box={recommended}
+          state="recommended"
+          isSelected={activeState === "recommended"}
+          onSelect={() => setSelectedState("recommended")}
+        />
+        <ChoiceButton
+          box={nextLarger}
+          state="nextLarger"
+          isSelected={activeState === "nextLarger"}
+          onSelect={() => setSelectedState("nextLarger")}
+        />
       </div>
 
       <dl className={styles.textSummary}>

@@ -8,11 +8,10 @@
 .scene {
   position: relative;
   display: grid;
-  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.2fr) minmax(0, 0.9fr);
-  align-items: end;
+  place-items: center;
   width: 100%;
-  min-height: 236px;
-  padding: 20px 4px 12px;
+  min-height: 286px;
+  padding: 16px 8px 8px;
   overflow: hidden;
   isolation: isolate;
   border: 1px solid color-mix(in srgb, #9d6d45 18%, transparent);
@@ -26,10 +25,10 @@
 .backdropBlob {
   position: absolute;
   z-index: -2;
-  top: 23px;
+  top: 28px;
   left: 50%;
-  width: min(58%, 220px);
-  height: 126px;
+  width: min(72%, 270px);
+  height: 190px;
   border-radius: 50% 45% 54% 48%;
   background: rgb(255 190 95 / 18%);
   transform: translateX(-50%) rotate(-4deg);
@@ -39,35 +38,19 @@
   position: absolute;
   z-index: -1;
   right: 7%;
-  bottom: 79px;
+  bottom: 30px;
   left: 7%;
-  height: 14px;
+  height: 18px;
   border-radius: 50%;
   background: rgb(103 70 44 / 12%);
   filter: blur(5px);
 }
 
-.choice {
+.boxStack {
   position: relative;
   z-index: 1;
-  display: flex;
-  min-width: 0;
-  flex-direction: column;
-  align-items: center;
-  gap: 3px;
-  text-align: center;
-}
-
-.recommendedChoice {
-  z-index: 2;
-}
-
-.visualSlot {
-  display: grid;
-  width: 100%;
-  height: 146px;
-  place-items: end center;
-  padding-bottom: 12px;
+  width: min(100%, 290px);
+  height: 246px;
 }
 
 .cuboid {
@@ -76,10 +59,18 @@
   --iso-dx: 38px;
   --iso-dy: 17px;
   --iso-h: 58px;
-  position: relative;
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
   width: calc(var(--iso-lx) + var(--iso-dx));
   height: calc(var(--iso-ly) + var(--iso-dy) + var(--iso-h));
+  transform: translateX(-50%);
   transform-origin: center bottom;
+  transition:
+    width 560ms cubic-bezier(0.22, 1, 0.36, 1),
+    height 560ms cubic-bezier(0.22, 1, 0.36, 1),
+    transform 420ms cubic-bezier(0.22, 1, 0.36, 1),
+    filter 420ms ease;
 }
 
 .recommended {
@@ -93,6 +84,11 @@
   width: 100%;
   height: 100%;
   filter: drop-shadow(0 0 0.8px currentColor);
+  transition:
+    clip-path 560ms cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 300ms ease,
+    background-color 300ms ease,
+    filter 420ms ease;
 }
 
 .frontFace {
@@ -129,8 +125,8 @@
 }
 
 .recommended {
+  z-index: 3;
   color: #b96026;
-  filter: drop-shadow(0 12px 8px rgb(91 51 24 / 22%));
 }
 
 .recommended .frontFace,
@@ -142,22 +138,57 @@
   background: rgb(255 198 109 / 24%);
 }
 
-.tooSmall,
-.nextLarger {
-  color: rgb(120 91 72 / 45%);
-  opacity: 0.63;
-  filter: saturate(0.45);
-  transform: scale(0.78);
+.tooSmall {
+  z-index: 4;
+  color: #c85656;
 }
 
 .tooSmall .frontFace {
-  background:
-    linear-gradient(162deg, transparent 46%, rgb(155 75 67 / 42%) 47% 53%, transparent 54%),
-    rgb(220 196 174 / 27%);
+  background: rgb(225 111 111 / 38%);
+}
+
+.tooSmall .rightFace {
+  background: rgb(179 75 75 / 42%);
+}
+
+.tooSmall .topFace {
+  background: rgb(250 173 173 / 34%);
+}
+
+.nextLarger {
+  z-index: 1;
+  color: #5964d9;
 }
 
 .nextLarger .frontFace {
-  background: rgb(194 179 162 / 20%);
+  background: rgb(106 116 229 / 30%);
+}
+
+.nextLarger .rightFace {
+  background: rgb(71 81 186 / 34%);
+}
+
+.nextLarger .topFace {
+  background: rgb(165 172 255 / 28%);
+}
+
+.selectedLayer {
+  z-index: 8;
+  filter: drop-shadow(0 16px 12px rgb(63 42 28 / 22%));
+  transform: translateX(-50%) scale(1.035);
+}
+
+.selectedLayer .face {
+  opacity: 0.82;
+  filter: drop-shadow(0 0 1.2px currentColor);
+}
+
+.mutedLayer {
+  transform: translateX(-50%) scale(0.975);
+}
+
+.mutedLayer .face {
+  opacity: 0.14;
 }
 
 .contents {
@@ -175,6 +206,11 @@
   display: block;
   clip-path: polygon(50% 0, 100% 24%, 100% 72%, 50% 100%, 0 72%, 0 24%);
   transform: translate(-50%, -50%);
+  transition:
+    width 560ms cubic-bezier(0.22, 1, 0.36, 1),
+    height 560ms cubic-bezier(0.22, 1, 0.36, 1),
+    transform 420ms cubic-bezier(0.22, 1, 0.36, 1),
+    border-radius 300ms ease;
 }
 
 .protection {
@@ -226,6 +262,60 @@
   transform: translate(-50%, -50%) rotate(-7deg);
 }
 
+.choiceRail {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 7px;
+  margin-top: 10px;
+}
+
+.choiceButton {
+  --choice-accent: #8c7463;
+  display: flex;
+  min-width: 0;
+  min-height: 78px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 7px 5px;
+  border: 1px solid #ead7bd;
+  border-radius: 16px;
+  background: #fffaf0;
+  color: #4d392e;
+  cursor: pointer;
+  text-align: center;
+  transition:
+    transform 280ms cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 220ms ease,
+    background-color 220ms ease,
+    box-shadow 280ms ease;
+}
+
+.choiceButton:disabled {
+  cursor: default;
+  opacity: 0.45;
+}
+
+.choiceButton[aria-pressed="true"] {
+  border-color: var(--choice-accent);
+  background: color-mix(in srgb, var(--choice-accent) 10%, #fffaf0);
+  box-shadow: 0 6px 0 color-mix(in srgb, var(--choice-accent) 22%, transparent);
+  transform: translateY(-3px);
+}
+
+.tooSmallChoice {
+  --choice-accent: #c85656;
+}
+
+.recommendedChoice {
+  --choice-accent: #d96327;
+}
+
+.nextLargerChoice {
+  --choice-accent: #5964d9;
+}
+
 .stateLabel {
   display: inline-flex;
   min-height: 22px;
@@ -241,10 +331,10 @@
   white-space: nowrap;
 }
 
-.recommendedChoice .stateLabel {
-  background: #d96327;
+.choiceButton[aria-pressed="true"] .stateLabel {
+  background: var(--choice-accent);
   color: #fff;
-  box-shadow: 0 3px 0 #a6421d;
+  box-shadow: 0 3px 0 color-mix(in srgb, var(--choice-accent) 72%, #33251d);
 }
 
 .boxLabel {
@@ -265,8 +355,8 @@
   white-space: nowrap;
 }
 
-.recommendedChoice .boxLabel strong {
-  color: #a3421f;
+.choiceButton[aria-pressed="true"] .boxLabel strong {
+  color: var(--choice-accent);
 }
 
 .emptyMark {
@@ -302,6 +392,23 @@
   color: #392a21;
   font-size: 0.78rem;
   font-weight: 700;
+}
+
+.compact .scene {
+  min-height: 245px;
+}
+
+.compact .boxStack {
+  height: 218px;
+  transform: scale(0.9);
+}
+
+.compact .choiceButton {
+  min-height: 70px;
+}
+
+.compact .textSummary {
+  display: none;
 }
 
 .front .cuboid {
@@ -351,13 +458,13 @@
 
 @container (max-width: 355px) {
   .scene {
-    min-height: 220px;
+    min-height: 260px;
     padding-inline: 0;
     border-radius: 22px;
   }
 
-  .visualSlot {
-    height: 136px;
+  .boxStack {
+    height: 224px;
     transform: scale(0.9);
   }
 
@@ -378,5 +485,13 @@
 @media (prefers-reduced-motion: reduce) {
   .recommended {
     animation: none;
+  }
+
+  .cuboid,
+  .face,
+  .protection,
+  .item,
+  .choiceButton {
+    transition: none;
   }
 }

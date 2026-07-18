@@ -41,6 +41,9 @@ test("server-renders the BoxKhaNad calculator", async () => {
   assert.match(html, /aria-pressed="true"/);
   assert.match(html, /ไอโซเมตริก/);
   assert.match(html, /กล่องพัสดุทั่วไป A\/B\/C/);
+  assert.match(html, /type="range"/);
+  assert.match(html, /aria-label="เลือกขนาดกล่องที่ต้องการเน้น"/);
+  assert.match(html, /เพิ่มยาว/);
   assert.match(html, /ส่วนต่างจากขนาดที่ประกาศ/);
   assert.match(html, /property="og:image" content="http:\/\/localhost\/og.png"/);
   assert.match(html, /property="og:image:alt" content="BoxKhaNad กล่องขนาดไหนถึงพอดี"/);
@@ -49,16 +52,19 @@ test("server-renders the BoxKhaNad calculator", async () => {
 });
 
 test("removes the disposable starter and metadata", async () => {
-  const [page, layout, packageJson, css] = await Promise.all([
+  const [page, layout, packageJson, css, comparisonCss] = await Promise.all([
     readFile(new URL("../app/page.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/layout.tsx", import.meta.url), "utf8"),
     readFile(new URL("../package.json", import.meta.url), "utf8"),
     readFile(new URL("../app/globals.css", import.meta.url), "utf8"),
+    readFile(new URL("../app/components/BoxComparison.module.css", import.meta.url), "utf8"),
   ]);
 
   assert.match(page, /BoxCalculator/);
   assert.match(layout, /lang="th"/);
   assert.match(layout, /BoxKhaNad/);
+  assert.match(css, /Playpen Sans Thai/);
+  assert.match(comparisonCss, /cubic-bezier\(0\.22, 1, 0\.36, 1\)/);
   assert.doesNotMatch(page, /SkeletonPreview|codex-preview/);
   assert.doesNotMatch(packageJson, /react-loading-skeleton/);
   assert.match(css, /\.view-toggle button \{[\s\S]*?min-height: 44px;/);
