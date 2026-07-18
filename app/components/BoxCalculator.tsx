@@ -50,6 +50,8 @@ const MAX_CATALOG_AXIS = Math.max(
 
 const CATALOG_ISOMETRIC_SCALE = fitIsometricScale(
   parcelBoxes.map(({ publishedSize }) => publishedSize),
+  270,
+  230,
 );
 
 function formatNumber(value: number) {
