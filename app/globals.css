@@ -1,5 +1,5 @@
-@import "tailwindcss";
 @import url("https://fonts.googleapis.com/css2?family=Playpen+Sans+Thai:wght@100..800&display=swap");
+@import "tailwindcss";
 
 :root {
   --ink: #2f231d;

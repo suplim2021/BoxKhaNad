@@ -46,7 +46,7 @@ test("server-renders the BoxKhaNad calculator", async () => {
   assert.match(html, /aria-label="เลือกขนาดกล่องที่ต้องการเน้น"/);
   assert.match(html, /เพิ่มยาว/);
   assert.match(html, /ส่วนต่างจากขนาดที่ประกาศ/);
-  assert.match(html, /property="og:image" content="http:\/\/localhost\/og.png"/);
+  assert.match(html, /property="og:image" content="https:\/\/boxkhanad\.suplim\.chatgpt\.site\/og.png"/);
   assert.match(html, /property="og:image:alt" content="BoxKhaNad กล่องขนาดไหนถึงพอดี"/);
   assert.doesNotMatch(html, /codex-preview|react-loading-skeleton/);
   assert.doesNotMatch(html, /Hong Thai Postal Box|ดูแหล่งข้อมูลขนาดกล่อง|source-link/);
